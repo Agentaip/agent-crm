@@ -20,6 +20,6 @@
     "express": "^5.1.0",
     "multer": "^2.0.0",
     "react-router-dom": "^7.6.0",
-    "sqlite3": "^5.1.7"
+    "better-sqlite3": "^8.0.1"
   }
 }
