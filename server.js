@@ -1,5 +1,5 @@
 const express = require('express');
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose(); // ← שינוי פה
 const dotenv = require('dotenv');
 const cors = require('cors');
 const multer = require('multer');
@@ -29,8 +29,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 📦 חיבור למסד הנתונים
-const db = new Database('./db/database.sqlite');
-console.log('✅ Connected to SQLite (better-sqlite3)');
+const db = new sqlite3.Database('./db/database.sqlite', (err) => {
+  if (err) {
+    console.error('❌ Error connecting to SQLite:', err.message);
+  } else {
+    console.log('✅ Connected to SQLite (sqlite3)');
+  }
+});
 
 // ✅ Middleware להרשאות – מאפשר גישה חופשית רק ל־GET /status ו־POST /users
 app.use((req, res, next) => {
@@ -47,213 +52,188 @@ app.get('/status', (req, res) => {
 
 // === CONTACTS ===
 app.get('/contacts', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM contacts').all();
+  db.all('SELECT * FROM contacts', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.get('/contacts/:id', (req, res) => {
-  try {
-    const row = db.prepare('SELECT * FROM contacts WHERE id = ?').get(req.params.id);
+  db.get('SELECT * FROM contacts WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ error: 'Contact not found' });
     res.json(row);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/contacts', (req, res) => {
-  try {
-    const { full_name, phone, email, status, notes } = req.body;
-    const info = db.prepare(`
-      INSERT INTO contacts (full_name, phone, email, status, notes)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(full_name, phone, email, status, notes);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { full_name, phone, email, status, notes } = req.body;
+  db.run(`
+    INSERT INTO contacts (full_name, phone, email, status, notes)
+    VALUES (?, ?, ?, ?, ?)`,
+    [full_name, phone, email, status, notes],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === LEADS ===
 app.get('/leads', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM leads').all();
+  db.all('SELECT * FROM leads', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/leads', (req, res) => {
-  try {
-    const { title, description, contact_id, channel, funnel_stage, status } = req.body;
-    const info = db.prepare(`
-      INSERT INTO leads (title, description, contact_id, channel, funnel_stage, status)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(title, description, contact_id, channel, funnel_stage, status);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { title, description, contact_id, channel, funnel_stage, status } = req.body;
+  db.run(`
+    INSERT INTO leads (title, description, contact_id, channel, funnel_stage, status)
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [title, description, contact_id, channel, funnel_stage, status],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === TASKS ===
 app.get('/tasks', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM tasks').all();
+  db.all('SELECT * FROM tasks', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/tasks', (req, res) => {
-  try {
-    const { title, description, status, due_date, related_to, related_id } = req.body;
-    const info = db.prepare(`
-      INSERT INTO tasks (title, description, status, due_date, related_to, related_id)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(title, description, status, due_date, related_to, related_id);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { title, description, status, due_date, related_to, related_id } = req.body;
+  db.run(`
+    INSERT INTO tasks (title, description, status, due_date, related_to, related_id)
+    VALUES (?, ?, ?, ?, ?, ?)`,
+    [title, description, status, due_date, related_to, related_id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === MEETINGS ===
 app.get('/meetings', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM meetings').all();
+  db.all('SELECT * FROM meetings', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/meetings', (req, res) => {
-  try {
-    const { contact_id, title, datetime, location, status } = req.body;
-    const info = db.prepare(`
-      INSERT INTO meetings (contact_id, title, datetime, location, status)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(contact_id, title, datetime, location, status);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { contact_id, title, datetime, location, status } = req.body;
+  db.run(`
+    INSERT INTO meetings (contact_id, title, datetime, location, status)
+    VALUES (?, ?, ?, ?, ?)`,
+    [contact_id, title, datetime, location, status],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === QUOTES ===
 app.get('/quotes', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM quotes').all();
+  db.all('SELECT * FROM quotes', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/quotes', upload.single('file'), (req, res) => {
-  try {
-    const { contact_id, amount, status } = req.body;
-    const file_url = req.file ? `/uploads/quotes/${req.file.filename}` : null;
-    const info = db.prepare(`
-      INSERT INTO quotes (contact_id, amount, status, file_url)
-      VALUES (?, ?, ?, ?)
-    `).run(contact_id, amount, status, file_url);
-    res.status(201).json({ id: info.lastInsertRowid, file_url });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { contact_id, amount, status } = req.body;
+  const file_url = req.file ? `/uploads/quotes/${req.file.filename}` : null;
+  db.run(`
+    INSERT INTO quotes (contact_id, amount, status, file_url)
+    VALUES (?, ?, ?, ?)`,
+    [contact_id, amount, status, file_url],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, file_url });
+    });
 });
 
 // === PAYMENTS ===
 app.get('/payments', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM payments').all();
+  db.all('SELECT * FROM payments', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/payments', (req, res) => {
-  try {
-    const { quote_id, amount, status, due_date, paid_at } = req.body;
-    const info = db.prepare(`
-      INSERT INTO payments (quote_id, amount, status, due_date, paid_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(quote_id, amount, status, due_date, paid_at);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { quote_id, amount, status, due_date, paid_at } = req.body;
+  db.run(`
+    INSERT INTO payments (quote_id, amount, status, due_date, paid_at)
+    VALUES (?, ?, ?, ?, ?)`,
+    [quote_id, amount, status, due_date, paid_at],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === AGENT REQUESTS ===
 app.get('/agent-requests', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM agent_requests ORDER BY timestamp DESC').all();
+  db.all('SELECT * FROM agent_requests ORDER BY timestamp DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/agent-requests', (req, res) => {
-  try {
-    const { agent_name, action, target_table, target_id, input_prompt, output, status } = req.body;
-    const info = db.prepare(`
-      INSERT INTO agent_requests (agent_name, action, target_table, target_id, input_prompt, output, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(agent_name, action, target_table, target_id, input_prompt, output, status);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { agent_name, action, target_table, target_id, input_prompt, output, status } = req.body;
+  db.run(`
+    INSERT INTO agent_requests (agent_name, action, target_table, target_id, input_prompt, output, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [agent_name, action, target_table, target_id, input_prompt, output, status],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 // === USERS ===
 app.get('/users', (req, res) => {
-  try {
-    const rows = db.prepare('SELECT * FROM users ORDER BY id DESC').all();
+  db.all('SELECT * FROM users ORDER BY id DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 app.post('/users', (req, res) => {
-  try {
-    const { name, email, role, api_key } = req.body;
-    if (!name || !email || !role || !api_key) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    const info = db.prepare(`
-      INSERT INTO users (name, email, role, api_key)
-      VALUES (?, ?, ?, ?)
-    `).run(name, email, role, api_key);
-    res.status(201).json({ id: info.lastInsertRowid });
-  } catch (err) {
-    if (err.message.includes('UNIQUE')) {
-      return res.status(400).json({ error: 'Email or API key already exists' });
-    }
-    res.status(500).json({ error: err.message });
+  const { name, email, role, api_key } = req.body;
+  if (!name || !email || !role || !api_key) {
+    return res.status(400).json({ error: 'Missing required fields' });
   }
+
+  db.run(`
+    INSERT INTO users (name, email, role, api_key)
+    VALUES (?, ?, ?, ?)`,
+    [name, email, role, api_key],
+    function (err) {
+      if (err) {
+        if (err.message.includes('UNIQUE')) {
+          return res.status(400).json({ error: 'Email or API key already exists' });
+        }
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ id: this.lastID });
+    });
 });
 
 app.delete('/users/:id', (req, res) => {
-  try {
-    const info = db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
-    if (info.changes === 0) return res.status(404).json({ error: 'User not found' });
+  db.run('DELETE FROM users WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    if (this.changes === 0) return res.status(404).json({ error: 'User not found' });
     res.json({ message: 'User deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  });
 });
 
 // קבצים סטטיים ו־404
