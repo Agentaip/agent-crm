@@ -1,8 +1,8 @@
-// auth.js
-const sqlite3 = require('sqlite3').verbose();
+// auth.js – גרסה עם better-sqlite3
+const Database = require('better-sqlite3');
 
 // ⬅️ התחברות למסד הנתונים שבתיקיית db
-const db = new sqlite3.Database('./db/database.sqlite');
+const db = new Database('./db/database.sqlite');
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -13,11 +13,8 @@ function authMiddleware(req, res, next) {
 
   const token = authHeader.split(' ')[1]; // לדוגמה: Bearer abc123
 
-  db.get('SELECT * FROM users WHERE api_key = ?', [token], (err, user) => {
-    if (err) {
-      console.error('Database error:', err.message); // לוג שגיאה שימושי
-      return res.status(500).json({ error: 'Database error' });
-    }
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE api_key = ?').get(token);
 
     if (!user) {
       return res.status(403).json({ error: 'Invalid API Key' });
@@ -25,7 +22,10 @@ function authMiddleware(req, res, next) {
 
     req.user = user; // שומר את המשתמש לזיהוי ברוטים אחרים
     next();
-  });
+  } catch (err) {
+    console.error('Database error:', err.message);
+    return res.status(500).json({ error: 'Database error' });
+  }
 }
 
 module.exports = authMiddleware;
