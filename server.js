@@ -13,12 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use((req, res, next) => {
-  if (req.path === '/status') return next();
-  if (req.path === '/users' && req.method === 'POST') return next();
-  auth(req, res, next);
-});
-
+// 📂 יצירת תיקיית קבצים אם לא קיימת
 const uploadDir = './uploads/quotes';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -33,15 +28,24 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// 📦 חיבור למסד הנתונים
 const db = new Database('./db/database.sqlite');
 console.log('✅ Connected to SQLite (better-sqlite3)');
 
-// Status
+// ✅ Middleware להרשאות – מאפשר גישה חופשית רק ל־GET /status ו־POST /users
+app.use((req, res, next) => {
+  const isStatus = req.originalUrl.includes('/status');
+  const isUserPost = req.originalUrl.includes('/users') && req.method === 'POST';
+  if (isStatus || isUserPost) return next();
+  auth(req, res, next);
+});
+
+// 🩺 בדיקת חיות
 app.get('/status', (req, res) => {
   res.json({ status: 'CRM server is running 👌' });
 });
 
-// CONTACTS
+// === CONTACTS ===
 app.get('/contacts', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM contacts').all();
@@ -74,7 +78,7 @@ app.post('/contacts', (req, res) => {
   }
 });
 
-// LEADS
+// === LEADS ===
 app.get('/leads', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM leads').all();
@@ -97,7 +101,7 @@ app.post('/leads', (req, res) => {
   }
 });
 
-// TASKS
+// === TASKS ===
 app.get('/tasks', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM tasks').all();
@@ -120,7 +124,7 @@ app.post('/tasks', (req, res) => {
   }
 });
 
-// MEETINGS
+// === MEETINGS ===
 app.get('/meetings', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM meetings').all();
@@ -143,7 +147,7 @@ app.post('/meetings', (req, res) => {
   }
 });
 
-// QUOTES
+// === QUOTES ===
 app.get('/quotes', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM quotes').all();
@@ -167,7 +171,7 @@ app.post('/quotes', upload.single('file'), (req, res) => {
   }
 });
 
-// PAYMENTS
+// === PAYMENTS ===
 app.get('/payments', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM payments').all();
@@ -190,7 +194,7 @@ app.post('/payments', (req, res) => {
   }
 });
 
-// AGENT REQUESTS
+// === AGENT REQUESTS ===
 app.get('/agent-requests', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM agent_requests ORDER BY timestamp DESC').all();
@@ -213,7 +217,7 @@ app.post('/agent-requests', (req, res) => {
   }
 });
 
-// USERS
+// === USERS ===
 app.get('/users', (req, res) => {
   try {
     const rows = db.prepare('SELECT * FROM users ORDER BY id DESC').all();
@@ -252,12 +256,13 @@ app.delete('/users/:id', (req, res) => {
   }
 });
 
-// Static files + 404
+// קבצים סטטיים ו־404
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found 😢' });
 });
 
+// 🚀 הפעלת השרת
 app.listen(process.env.PORT || 3000, () => {
   console.log(`🚀 AgentCRM running on port ${process.env.PORT || 3000}`);
 });
