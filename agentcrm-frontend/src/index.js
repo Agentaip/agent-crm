@@ -1,10 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme'; // ✅ זה הקובץ החדש עם העיצוב
 
-const theme = createTheme(); // אפשר להוסיף כאן התאמות אישיות
+// טוען את הגופן Orbitron מה־Google Fonts
+const fontLink = document.createElement('link');
+fontLink.href = 'https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap';
+fontLink.rel = 'stylesheet';
+document.head.appendChild(fontLink);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

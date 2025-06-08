@@ -7,8 +7,10 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 
-const STATUS_OPTIONS = ['open', 'in_progress', 'done', 'cancelled'];
-const RELATED_TO_OPTIONS = ['lead', 'contact'];
+const STATUS_OPTIONS = ['open', 'in_progress', 'delayed', 'done'];
+const RELATED_TO_OPTIONS = ['lead', 'contact', 'project', 'agent'];
+const TYPE_OPTIONS = ['QA', 'Bug', 'Development', 'Content', 'Follow-up'];
+const PRIORITY_OPTIONS = ['low', 'normal', 'high'];
 
 function TasksPage() {
   const [tasks, setTasks] = useState([]);
@@ -17,10 +19,14 @@ function TasksPage() {
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    status: 'open',
+    type: '',
+    assigned_to: '',
     due_date: '',
+    status: 'open',
+    priority: 'normal',
     related_to: 'lead',
     related_id: '',
+    notes: ''
   });
 
   const [editId, setEditId] = useState(null);
@@ -61,10 +67,14 @@ function TasksPage() {
         setNewTask({
           title: '',
           description: '',
-          status: 'open',
+          type: '',
+          assigned_to: '',
           due_date: '',
+          status: 'open',
+          priority: 'normal',
           related_to: 'lead',
           related_id: '',
+          notes: ''
         });
       })
       .catch(err => {
@@ -135,51 +145,33 @@ function TasksPage() {
       <Paper sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>Add New Task</Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <TextField
-            label="Title"
-            name="title"
-            value={newTask.title}
-            onChange={handleChange}
-          />
-          <TextField
-            label="Description"
-            name="description"
-            value={newTask.description}
-            onChange={handleChange}
-          />
-          <Select
-            name="status"
-            value={newTask.status}
-            onChange={handleChange}
-            displayEmpty
-          >
+          <TextField label="Title" name="title" value={newTask.title} onChange={handleChange} />
+          <TextField label="Description" name="description" value={newTask.description} onChange={handleChange} />
+          <Select name="type" value={newTask.type} onChange={handleChange} displayEmpty>
+            <MenuItem value="">Type</MenuItem>
+            {TYPE_OPTIONS.map(opt => (
+              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+            ))}
+          </Select>
+          <TextField label="Assigned To" name="assigned_to" value={newTask.assigned_to} onChange={handleChange} />
+          <TextField type="date" label="Due Date" name="due_date" value={newTask.due_date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+          <Select name="status" value={newTask.status} onChange={handleChange}>
             {STATUS_OPTIONS.map((opt) => (
               <MenuItem key={opt} value={opt}>{opt}</MenuItem>
             ))}
           </Select>
-          <TextField
-            label="Due Date"
-            type="date"
-            name="due_date"
-            value={newTask.due_date}
-            onChange={handleChange}
-            InputLabelProps={{ shrink: true }}
-          />
-          <Select
-            name="related_to"
-            value={newTask.related_to}
-            onChange={handleChange}
-          >
+          <Select name="priority" value={newTask.priority} onChange={handleChange}>
+            {PRIORITY_OPTIONS.map((opt) => (
+              <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+            ))}
+          </Select>
+          <Select name="related_to" value={newTask.related_to} onChange={handleChange}>
             {RELATED_TO_OPTIONS.map(opt => (
               <MenuItem key={opt} value={opt}>{opt}</MenuItem>
             ))}
           </Select>
-          <TextField
-            label="Related ID"
-            name="related_id"
-            value={newTask.related_id}
-            onChange={handleChange}
-          />
+          <TextField label="Related ID" name="related_id" value={newTask.related_id} onChange={handleChange} />
+          <TextField label="Notes" name="notes" value={newTask.notes} onChange={handleChange} />
           <Button variant="contained" onClick={handleSubmit}>Add</Button>
         </Box>
       </Paper>
@@ -194,10 +186,14 @@ function TasksPage() {
               <TableRow>
                 <TableCell>Title</TableCell>
                 <TableCell>Description</TableCell>
+                <TableCell>Type</TableCell>
+                <TableCell>Assigned To</TableCell>
                 <TableCell>Status</TableCell>
+                <TableCell>Priority</TableCell>
                 <TableCell>Due Date</TableCell>
                 <TableCell>Related To</TableCell>
                 <TableCell>Related ID</TableCell>
+                <TableCell>Notes</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -206,58 +202,42 @@ function TasksPage() {
                 <TableRow key={task.id}>
                   {editId === task.id ? (
                     <>
+                      <TableCell><TextField name="title" value={editData.title} onChange={handleEditChange} /></TableCell>
+                      <TableCell><TextField name="description" value={editData.description} onChange={handleEditChange} /></TableCell>
                       <TableCell>
-                        <TextField
-                          name="title"
-                          value={editData.title}
-                          onChange={handleEditChange}
-                        />
+                        <Select name="type" value={editData.type} onChange={handleEditChange}>
+                          {TYPE_OPTIONS.map(opt => (
+                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                          ))}
+                        </Select>
                       </TableCell>
+                      <TableCell><TextField name="assigned_to" value={editData.assigned_to} onChange={handleEditChange} /></TableCell>
                       <TableCell>
-                        <TextField
-                          name="description"
-                          value={editData.description}
-                          onChange={handleEditChange}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          name="status"
-                          value={editData.status}
-                          onChange={handleEditChange}
-                        >
+                        <Select name="status" value={editData.status} onChange={handleEditChange}>
                           {STATUS_OPTIONS.map(opt => (
                             <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                           ))}
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <TextField
-                          type="date"
-                          name="due_date"
-                          value={editData.due_date}
-                          onChange={handleEditChange}
-                          InputLabelProps={{ shrink: true }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          name="related_to"
-                          value={editData.related_to}
-                          onChange={handleEditChange}
-                        >
-                          {RELATED_TO_OPTIONS.map(opt => (
+                        <Select name="priority" value={editData.priority} onChange={handleEditChange}>
+                          {PRIORITY_OPTIONS.map(opt => (
                             <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                           ))}
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <TextField
-                          name="related_id"
-                          value={editData.related_id}
-                          onChange={handleEditChange}
-                        />
+                        <TextField type="date" name="due_date" value={editData.due_date} onChange={handleEditChange} InputLabelProps={{ shrink: true }} />
                       </TableCell>
+                      <TableCell>
+                        <Select name="related_to" value={editData.related_to} onChange={handleEditChange}>
+                          {RELATED_TO_OPTIONS.map(opt => (
+                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                          ))}
+                        </Select>
+                      </TableCell>
+                      <TableCell><TextField name="related_id" value={editData.related_id} onChange={handleEditChange} /></TableCell>
+                      <TableCell><TextField name="notes" value={editData.notes} onChange={handleEditChange} /></TableCell>
                       <TableCell>
                         <Button onClick={handleEditSave}>Save</Button>
                       </TableCell>
@@ -266,17 +246,17 @@ function TasksPage() {
                     <>
                       <TableCell>{task.title}</TableCell>
                       <TableCell>{task.description}</TableCell>
+                      <TableCell>{task.type}</TableCell>
+                      <TableCell>{task.assigned_to}</TableCell>
                       <TableCell>{task.status}</TableCell>
+                      <TableCell>{task.priority}</TableCell>
                       <TableCell>{task.due_date}</TableCell>
                       <TableCell>{task.related_to}</TableCell>
                       <TableCell>{task.related_id}</TableCell>
+                      <TableCell>{task.notes}</TableCell>
                       <TableCell>
-                        <IconButton onClick={() => handleEdit(task)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => handleDelete(task.id)}>
-                          <DeleteIcon />
-                        </IconButton>
+                        <IconButton onClick={() => handleEdit(task)}><EditIcon /></IconButton>
+                        <IconButton onClick={() => handleDelete(task.id)}><DeleteIcon /></IconButton>
                       </TableCell>
                     </>
                   )}
