@@ -39,11 +39,14 @@ const allQuery = (query, params = []) => db.prepare(query).all(...params);
 
 // ✅ Middleware להרשאות – מאפשר גישה חופשית רק ל־GET /status ו־POST /users
 app.use((req, res, next) => {
+  console.log('➡️ Incoming request:', req.method, req.path); // 💥
   const isStatus = req.method === 'GET' && req.path === '/status';
-  const isUserPost = req.method === 'POST' && req.path === '/users';
+  const isUserPost = req.method === 'POST' && req.path.startsWith('/users');
   if (isStatus || isUserPost) return next();
   auth(req, res, next);
 });
+
+
 
 // 🩺 בדיקת חיות
 app.get('/status', (req, res) => {
